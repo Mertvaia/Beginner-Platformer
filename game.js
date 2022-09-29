@@ -11,8 +11,9 @@ let keyPress = window.addEventListener("keydown", (event) => {keyObject[event.ke
 document.addEventListener("keyup", (event) => {delete keyObject[event.key]})
 let touchGrass = false
 let platformArray = []
+let platformsSpeed = 1
 
-const Player = {posX:500, posY:200, width:25, height:50, speedX:4, speedY:0}
+const Player = {posX:500, posY:0, width:25, height:50, speedX:4, speedY:0}
 class Platform{
     constructor(coordX, coordY){
         this.posX = coordX
@@ -24,8 +25,8 @@ class Platform{
 
 gameStart()
 
-platformArray.push(new Platform(200,600))
-platformArray.push(new Platform(600,600))
+platformArray.push(new Platform(400,100))
+platformArray.push(new Platform(600,400))
 
 function gameStart(){
     gameTick()
@@ -37,12 +38,13 @@ function gameTick(){
     if(!dead){
         setTimeout(()=>{
             drawBG()
+            movePlatforms()
             drawPlatforms()
             moveChar()
             drawChar()
 
             gameTick()
-        }, 30)
+        }, 20)
     }
 }
 
@@ -102,12 +104,24 @@ function touchControl(){
     }
     for(let i = 0; i < platformArray.length;i+=1){
         let platform = platformArray[i]
-        if(((Player.posY+Player.height) >= platform.posY)&&(Player.posY < platform.posY+platform.height)&&(Player.posX + Player.width > platform.posX)&&(Player.posX< platform.posX + platform.width)){
-            Player.posY = platform.posY - Player.height
-            touchy = true
+        if((Player.posX + Player.width > platform.posX)&&(Player.posX< platform.posX + platform.width)){
+            for(let j = 0; j < Player.height/2; j+= 5){
+                if((Player.posY + j > platform.posY) && (Player.posY + j < platform.posY + platform.height)){
+                    Player.posY = platform.posY + platform.height
+                    Player.speedY = 1
+                }
+            }
+            for(let j = Player.height/2 + 5; j<=Player.height; j += 5){
+                if((Player.posY + j > platform.posY) && (Player.posY + j < platform.posY + platform.height)){
+                    Player.posY = platform.posY - Player.height
+                }
+
+                if(Player.posY + Player.height <= platform.posY && Player.posY + Player.height >= platform.posY - platformsSpeed){
+                    touchy = true
+                }
+            }
         }
     }
-    console.log(touchy)
     return touchy
 }
 
@@ -117,15 +131,9 @@ function gravity(){
     if(Player.speedY < 10){
         Player.speedY += 0.5
     }
-    if(touchGrass){
+    if(touchGrass && Player.speedY > 8){
         Player.speedY = 0
     }
-}
-
-
-
-function movePlatforms(){
-
 }
 
 
@@ -134,5 +142,13 @@ function drawPlatforms(){
     ctx.fillStyle = platformColor
     for(const platform of platformArray){
         ctx.fillRect(platform.posX, platform.posY, platform.width, platform.height)
+    }
+}
+
+
+
+function movePlatforms(){
+    for(let platform of platformArray){
+        platform.posY += platformsSpeed
     }
 }
