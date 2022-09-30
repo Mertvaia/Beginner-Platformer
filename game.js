@@ -5,15 +5,19 @@ const gameHeight = gameBoard.height
 const gameBG = "aqua"
 const charColor = "#ff00ff"
 const platformColor = "black"
-let dead = false
+const playButton = document.getElementById("playButton")
+let dead = true
 let keyObject = {}
 let keyPress = window.addEventListener("keydown", (event) => {keyObject[event.key] = true})
 document.addEventListener("keyup", (event) => {delete keyObject[event.key]})
 let touchGrass = false
 let platformArray = []
 let platformsSpeed = 1
+let extraJump = false
+let score = 0
 
-const Player = {posX:500, posY:0, width:25, height:50, speedX:4, speedY:0}
+
+const Player = {posX:500, posY:0, width:25, height:50, speedX:6, speedY:0}
 class Platform{
     constructor(coordX, coordY){
         this.posX = coordX
@@ -21,15 +25,16 @@ class Platform{
     }
     width = 200
     height = 10
+    exists = true
 }
 
-gameStart()
+playButton.onclick = ()=>{if(dead == true){dead = false;score = 0;Player.posX = 500; Player.posY=0;Player.speedY=0;platformArray = [];platformArray.push(platformArray.push(new Platform(400,50))) ;gameStart()}}
 
-platformArray.push(new Platform(400,100))
-platformArray.push(new Platform(600,400))
+
 
 function gameStart(){
     gameTick()
+    newPlaformTimer()
 }
 
 
@@ -42,8 +47,9 @@ function gameTick(){
             drawPlatforms()
             moveChar()
             drawChar()
-
             gameTick()
+            score += 20
+            document.getElementById("score").innerHTML = `score:${Math.ceil(score/1000)}`
         }, 20)
     }
 }
@@ -72,23 +78,21 @@ function moveChar(){
         Player.posX -= Player.speedX
     }
     if(touchGrass){
-        for(const platform of platformArray){
-            if((Player.posX + Player.width < platform.posX)||(Player.posX > platform.posX + platform.width)){
-                touchGrass = touchControl()
-            }
-            //else{
-                //touchGrass = true
-                //break
-            //}
-        }
+        extraJump = true
+        touchGrass = touchControl()
     }
     if(touchGrass && (keyObject["w"] || keyObject[" "] || keyObject["ArrowUp"])){
         Player.speedY = -15
         touchGrass = false
     }
+    //else if(extraJump && !touchGrass && Player.speedY > 3 && (keyObject["w"] || keyObject[" "] || keyObject["ArrowUp"])){
+        //Player.speedY = -11                       will add double jump here (maybe?)
+        //extraJump = false
+    //}
     if(!touchGrass){
         Player.posY += Player.speedY
         touchGrass = touchControl()
+        
     }
     gravity()
 
@@ -98,9 +102,8 @@ function moveChar(){
 
 function touchControl(){
     let touchy
-    if(gameHeight <= Player.posY+Player.height){
-        Player.posY = gameHeight - Player.height //will change if statement this as death
-        touchy = true
+    if(gameHeight <= Player.posY){
+        dead = true
     }
     for(let i = 0; i < platformArray.length;i+=1){
         let platform = platformArray[i]
@@ -128,10 +131,10 @@ function touchControl(){
 
 
 function gravity(){
-    if(Player.speedY < 10){
+    if(Player.speedY < 15){
         Player.speedY += 0.5
     }
-    if(touchGrass && Player.speedY > 8){
+    if(touchGrass && Player.speedY > platformsSpeed*4){
         Player.speedY = 0
     }
 }
@@ -150,5 +153,26 @@ function drawPlatforms(){
 function movePlatforms(){
     for(let platform of platformArray){
         platform.posY += platformsSpeed
+        if(platform.posY > (gameHeight + 20)){
+            let index = platformArray.indexOf(platform)
+            platformArray.splice(index, 1)
+        }
     }
+}
+
+
+
+function newPlaformTimer(){
+    if(!dead){
+        setTimeout(()=>{
+            createPlatform()
+            newPlaformTimer()}, 3000)
+    }
+}
+
+
+
+function createPlatform(){
+    let randpos = Math.ceil(Math.random()*(gameWidth-200))
+    platformArray.push(new Platform(randpos, -50))
 }
